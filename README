@@ -1,3 +1,3 @@
 Welcome to OpenDropBox!
 
-OpenDropBox is an open source, fault-tolerant, distributed file system.  It is designed for cross-platform networks, with clients available for Mac, Windows, and Linux.  Customizable levels of security allow for untrusted servers to host parts of your distributed system, allowing for secure deployment across untrusted networks.  Collaboration is available for users on a single instance of OpenDropBox.
+OpenDropBox is an open source, fault-tolerant, distributed file system.  It is designed for cross-platform networks, with clients available for Mac, Windows, and Linux.  Customizable levels of security allow for untrusted clients to host parts of your distributed system, ensuring your data is safe even when deployed across unsecured networks. Collaboration is available for users on a single instance of OpenDropBox, with plans to allow for sharing across multiple instances in the future.
