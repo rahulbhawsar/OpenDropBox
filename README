@@ -1,3 +1,18 @@
 Welcome to OpenDropBox!
+-----------------------
 
 OpenDropBox is an open source, fault-tolerant, distributed file system.  It is designed for cross-platform networks, with clients available for Mac, Windows, and Linux.  Customizable levels of security allow for untrusted clients to host parts of your distributed system, ensuring your data is safe even when deployed across unsecured networks. Collaboration is available for users on a single instance of OpenDropBox, with plans to allow for sharing across multiple instances in the future.
+
+Use Cases
+---------
+
+If your college/business/dorm has a lot of computers with excess storage, ODB will let you take advantage of this space to create a single volume extending across all machines in the network.
+
+If you only have access to a single computer, you can join nearby networks (measured in response time / bandwidth available between you and the network).  A database of networks will be kept on the website so that clients can access this list.  Not a problem that no clients are trusted, as mentioned above.
+
+Not a viable solution for a single user / single computer, as there will be no space gain and no replication.  However, application will still function.
+
+Planned Features
+----------------
+
+Designed for large files (e.g. MB or larger).  Will work fine for smaller files, but performance may suffer if trying to access too many small files across large networks.
