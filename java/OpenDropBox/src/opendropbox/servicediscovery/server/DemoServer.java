@@ -5,7 +5,6 @@
 
 package opendropbox.servicediscovery.server;
 
-import opendropbox.servicediscovery.*;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;

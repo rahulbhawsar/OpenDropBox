@@ -5,7 +5,6 @@
 
 package opendropbox.servicediscovery.client;
 
-import java.util.Stack;
 import java.util.Vector;
 import opendropbox.servicediscovery.ServiceDescription;
 
