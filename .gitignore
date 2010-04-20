@@ -1,4 +1,6 @@
 # Ignore all .class files
-.class
-.DS_store
+*.class
+# Ignore all DS_store files
+*.DS_store
+# Don't include the private directory in netbeans
 java/OpenDropBox/nbproject/private/
