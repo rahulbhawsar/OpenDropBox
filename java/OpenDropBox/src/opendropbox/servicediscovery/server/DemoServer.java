@@ -12,6 +12,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
+import opendropbox.servicediscovery.ServiceConstants;
 import opendropbox.servicediscovery.client.ServiceListManager;
 
 /**
@@ -24,12 +25,11 @@ public class DemoServer {
     public static void main(String[] args) {
 
         ServerSocket serverSocket = null;
-        String serviceName = "ODB v0.1";
-        String serviceInstanceName = "ODB-A";
+        String serviceInstanceName = "ODB-B";
 
         // before we start this service, we must make sure that no service with this name
         // is already running
-        ServiceListManager manager = new ServiceListManager(serviceName);
+        ServiceListManager manager = new ServiceListManager(ServiceConstants.SERVICE_NAME);
         manager.refresh(2000);
         if (manager.containsInstance(serviceInstanceName))
         {
@@ -44,10 +44,10 @@ public class DemoServer {
             serverSocket.bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
 
             // create a new service responder to respond to queries about services running on this machine
-            new ServiceResponder(serviceName, serviceInstanceName, serverSocket.getInetAddress(), serverSocket.getLocalPort()).startResponder();
+            new ServiceResponder(ServiceConstants.SERVICE_NAME, serviceInstanceName, serverSocket.getInetAddress(), serverSocket.getLocalPort()).startResponder();
 
-        } catch (IOException ioe) {
-            System.err.println("Could not bind a server socket to a free port: " + ioe);
+        } catch (IOException e) {
+            System.err.println("Could not bind a server socket to a free port: " + e);
             System.exit(1);
         }
 

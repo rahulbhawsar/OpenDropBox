@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.Vector;
+import opendropbox.servicediscovery.ServiceConstants;
 import opendropbox.servicediscovery.ServiceDescription;
 
 /**
@@ -25,7 +26,7 @@ public class DemoClient {
 
     public DemoClient() {
 
-        ServiceListManager manager = new ServiceListManager("ODB v0.1");
+        ServiceListManager manager = new ServiceListManager(ServiceConstants.SERVICE_NAME);
 
         manager.refresh(2000);
 

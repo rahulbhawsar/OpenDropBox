@@ -11,7 +11,10 @@ package opendropbox.servicediscovery;
  */
 public class ServiceConstants {
 
-    // specify constants for server and clients to communicate with
+        // for testing
+        public static final String SERVICE_NAME = "ODB v0.1";
+
+        // specify constants for server and clients to communicate with
 	public static final String MULTICAST_ADDRESS_GROUP = "230.0.0.1";
 	public static final int MULTICAST_PORT = 4321;
 	public static final int DATAGRAM_LENGTH = 1024;
@@ -21,4 +24,6 @@ public class ServiceConstants {
 	public static final int BROWSER_SOCKET_TIMEOUT = 250;
 	public static final int BROWSER_QUERY_INTERVAL = 500;
 
+        // specify constants for service monitor
+        public static final int DEFAULT_POLLING_INTERVAL = 60000;
 }

@@ -30,7 +30,6 @@ public class ServiceResponder implements Runnable {
     protected DatagramPacket _receivedPacket;
     protected Thread _thread;
 
-
     static {
         try {
             _multicastAddressGroup = InetAddress.getByName(ServiceConstants.MULTICAST_ADDRESS_GROUP);
@@ -95,8 +94,39 @@ public class ServiceResponder implements Runnable {
     }
 
     /**
+     * The run method of ServiceResponder which handles
+     * receiving and sending messages.
+     */
+    public void run() {
+
+        while (_shouldRun) {
+
+            byte[] buf = new byte[ServiceConstants.DATAGRAM_LENGTH];
+            _receivedPacket = new DatagramPacket(buf, buf.length);
+
+            try {
+
+                // this will throw an exception once the timeout is reached
+                _socket.receive(_receivedPacket);
+
+                // check to see if this packet was meant for this service responder
+                if (isQueryPacket()) {
+                    DatagramPacket replyPacket = getReplyPacket();
+                    _queuedPacket = replyPacket;
+                    sendQueuedPacket();
+                }
+            } catch (SocketTimeoutException e) {
+                // if we reach a timeout, we just continue
+            } catch (IOException e) {
+                // if we run into an issue, we just continues
+            }
+
+        }
+    }
+
+    /**
      * Return the ServiceDescription associated with this ServiceResponder.
-     * 
+     *
      * @return - the ServiceDescription
      */
     public ServiceDescription getDescription() {
@@ -178,38 +208,7 @@ public class ServiceResponder implements Runnable {
         } catch (IOException e) {
             System.err.println("Unexpected exception: " + e);
             e.printStackTrace();
-        /* resume operation */
-        }
-    }
-
-    /**
-     * The run method of ServiceResponder which handles
-     * receiving and sending messages.
-     */
-    public void run() {
-
-        while (_shouldRun) {
-
-            byte[] buf = new byte[ServiceConstants.DATAGRAM_LENGTH];
-            _receivedPacket = new DatagramPacket(buf, buf.length);
-
-            try {
-
-                // this will throw an exception once the timeout is reached
-                _socket.receive(_receivedPacket);
-
-                // check to see if this packet was meant for this service responder
-                if (isQueryPacket()) {
-                    DatagramPacket replyPacket = getReplyPacket();
-                    _queuedPacket = replyPacket;
-                    sendQueuedPacket();
-                }
-            } catch (SocketTimeoutException e) {
-                // if we reach a timeout, we just continue
-            } catch (IOException e) {
-                // if we run into an issue, we just continues
-            }
-
+            /* resume operation */
         }
     }
 
@@ -222,9 +221,10 @@ public class ServiceResponder implements Runnable {
     protected boolean isQueryPacket() {
 
         // if the packet is null, return false
-        if (_receivedPacket == null)
+        if (_receivedPacket == null) {
             return false;
-        
+        }
+
         // get the data from the incoming packet
         String dataString = new String(_receivedPacket.getData());
 
@@ -235,12 +235,14 @@ public class ServiceResponder implements Runnable {
         if (position > -1) {
             dataString = dataString.substring(0, position);
         } // if we don't return false
-        else
+        else {
             return false;
+        }
 
         // if this matches the format and service name we have specified, return true
-        if (dataString.startsWith("SERVICE QUERY " + getEncodedServiceName()))
+        if (dataString.startsWith("SERVICE QUERY " + getEncodedServiceName())) {
             return true;
+        }
 
         // if all else fails, return false
         return false;

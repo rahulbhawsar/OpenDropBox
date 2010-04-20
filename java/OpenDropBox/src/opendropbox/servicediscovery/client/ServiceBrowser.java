@@ -25,35 +25,34 @@ import opendropbox.servicediscovery.ServiceDescription;
  */
 public class ServiceBrowser implements Runnable {
 
-    protected static InetAddress multicastAddressGroup;
-    protected static int multicastPort;
-
+    protected static InetAddress _multicastAddressGroup;
+    protected static int _multicastPort;
+    protected String _serviceName;
+    protected boolean _shouldRun = true;
+    protected MulticastSocket _socket;
+    protected DatagramPacket _queuedPacket;
+    protected DatagramPacket _receivedPacket;
+    protected Vector<ServiceBrowserListener> _listeners;
+    protected Thread _thread;
+    protected Timer _timer;
 
     static {
         try {
-            multicastAddressGroup = InetAddress.getByName(ServiceConstants.MULTICAST_ADDRESS_GROUP);
-            multicastPort = ServiceConstants.MULTICAST_PORT;
+            _multicastAddressGroup = InetAddress.getByName(ServiceConstants.MULTICAST_ADDRESS_GROUP);
+            _multicastPort = ServiceConstants.MULTICAST_PORT;
         } catch (UnknownHostException uhe) {
             System.err.println("Unexpected exception: " + uhe);
             uhe.printStackTrace();
             System.exit(1);
         }
     }
-    protected String serviceName;
-    protected boolean shouldRun = true;
-    protected MulticastSocket socket;
-    protected DatagramPacket queuedPacket;
-    protected DatagramPacket receivedPacket;
-    protected Vector<ServiceBrowserListener> listeners;
-    protected Thread myThread;
-    protected Timer myTimer;
 
     public ServiceBrowser() {
 
         try {
-            socket = new MulticastSocket(multicastPort);
-            socket.joinGroup(multicastAddressGroup);
-            socket.setSoTimeout(ServiceConstants.BROWSER_SOCKET_TIMEOUT);
+            _socket = new MulticastSocket(_multicastPort);
+            _socket.joinGroup(_multicastAddressGroup);
+            _socket.setSoTimeout(ServiceConstants.BROWSER_SOCKET_TIMEOUT);
 
         } catch (IOException ioe) {
             System.err.println("Unexpected exception: " + ioe);
@@ -62,7 +61,7 @@ public class ServiceBrowser implements Runnable {
         }
 
 
-        listeners = new Vector<ServiceBrowserListener>();
+        _listeners = new Vector<ServiceBrowserListener>();
     }
 
     public ServiceBrowser(ServiceBrowserListener listener, String serviceName) {
@@ -71,87 +70,17 @@ public class ServiceBrowser implements Runnable {
         this.setServiceName(serviceName);
     }
 
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    protected String getEncodedServiceName() {
-        try {
-            return URLEncoder.encode(getServiceName(), "UTF-8");
-        } catch (UnsupportedEncodingException uee) {
-            return null;
-        }
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
-    public void addServiceBrowserListener(ServiceBrowserListener l) {
-        if (!listeners.contains(l)) {
-            listeners.add(l);
-        }
-    }
-
-    public void removeServiceBrowserListener(ServiceBrowserListener l) {
-        listeners.remove(l);
-    }
-
-    public void startLookup() {
-        if (myTimer == null) {
-            myTimer = new Timer("QueryTimer");
-            myTimer.scheduleAtFixedRate(new QueryTimerTask(), 0L, ServiceConstants.BROWSER_QUERY_INTERVAL);
-        }
-    }
-
-    public void startSingleLookup() {
-        if (myTimer == null) {
-            myTimer = new Timer("QueryTimer");
-            myTimer.schedule(new QueryTimerTask(), 0L);
-            myTimer = null;
-        }
-    }
-
-    public void stopLookup() {
-        if (myTimer != null) {
-            myTimer.cancel();
-            myTimer = null;
-        }
-    }
-
-    protected void notifyReply(ServiceDescription descriptor) {
-        for (ServiceBrowserListener l : listeners) {
-            l.serviceEncountered(descriptor);
-        }
-    }
-
-    public void startListener() {
-        if (myThread == null) {
-            shouldRun = true;
-            myThread = new Thread(this, "ServiceBrowser");
-            myThread.start();
-        }
-    }
-
-    public void stopListener() {
-        if (myThread != null) {
-            shouldRun = false;
-            myThread.interrupt();
-            myThread = null;
-        }
-    }
-
     public void run() {
 
 
-        while (shouldRun) {
+        while (_shouldRun) {
 
 
             /* listen (briefly) for a reply packet */
             try {
                 byte[] buf = new byte[ServiceConstants.DATAGRAM_LENGTH];
-                receivedPacket = new DatagramPacket(buf, buf.length);
-                socket.receive(receivedPacket); // note timeout in effect
+                _receivedPacket = new DatagramPacket(buf, buf.length);
+                _socket.receive(_receivedPacket); // note timeout in effect
 
 
                 if (isReplyPacket()) {
@@ -170,7 +99,7 @@ public class ServiceBrowser implements Runnable {
                     descriptor = getReplyDescriptor();
                     if (descriptor != null) {
                         notifyReply(descriptor);
-                        receivedPacket = null;
+                        _receivedPacket = null;
                     }
 
                 }
@@ -181,7 +110,7 @@ public class ServiceBrowser implements Runnable {
             } catch (IOException ioe) {
                 System.err.println("Unexpected exception: " + ioe);
                 ioe.printStackTrace();
-            /* resume operation */
+                /* resume operation */
             }
 
             sendQueuedPacket();
@@ -190,25 +119,25 @@ public class ServiceBrowser implements Runnable {
     }
 
     protected void sendQueuedPacket() {
-        if (queuedPacket == null) {
+        if (_queuedPacket == null) {
             return;
         }
         try {
-            socket.send(queuedPacket);
-            queuedPacket = null;
+            _socket.send(_queuedPacket);
+            _queuedPacket = null;
         } catch (IOException ioe) {
             System.err.println("Unexpected exception: " + ioe);
             ioe.printStackTrace();
-        /* resume operation */
+            /* resume operation */
         }
     }
 
     protected boolean isReplyPacket() {
-        if (receivedPacket == null) {
+        if (_receivedPacket == null) {
             return false;
         }
 
-        String dataStr = new String(receivedPacket.getData());
+        String dataStr = new String(_receivedPacket.getData());
         int pos = dataStr.indexOf((char) 0);
         if (pos > -1) {
             dataStr = dataStr.substring(0, pos);
@@ -223,7 +152,7 @@ public class ServiceBrowser implements Runnable {
     }
 
     protected ServiceDescription getReplyDescriptor() {
-        String dataStr = new String(receivedPacket.getData());
+        String dataStr = new String(_receivedPacket.getData());
         int pos = dataStr.indexOf((char) 0);
         if (pos > -1) {
             dataStr = dataStr.substring(0, pos);
@@ -250,10 +179,80 @@ public class ServiceBrowser implements Runnable {
 
         byte[] bytes = buf.toString().getBytes();
         DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
-        packet.setAddress(multicastAddressGroup);
-        packet.setPort(multicastPort);
+        packet.setAddress(_multicastAddressGroup);
+        packet.setPort(_multicastPort);
 
         return packet;
+    }
+
+    public String getServiceName() {
+        return _serviceName;
+    }
+
+    protected String getEncodedServiceName() {
+        try {
+            return URLEncoder.encode(getServiceName(), "UTF-8");
+        } catch (UnsupportedEncodingException uee) {
+            return null;
+        }
+    }
+
+    public void setServiceName(String serviceName) {
+        this._serviceName = serviceName;
+    }
+
+    public void addServiceBrowserListener(ServiceBrowserListener l) {
+        if (!_listeners.contains(l)) {
+            _listeners.add(l);
+        }
+    }
+
+    public void removeServiceBrowserListener(ServiceBrowserListener l) {
+        _listeners.remove(l);
+    }
+
+    public void startLookup() {
+        if (_timer == null) {
+            _timer = new Timer("QueryTimer");
+            _timer.scheduleAtFixedRate(new QueryTimerTask(), 0L, ServiceConstants.BROWSER_QUERY_INTERVAL);
+        }
+    }
+
+    public void startSingleLookup() {
+        if (_timer == null) {
+            _timer = new Timer("QueryTimer");
+            _timer.schedule(new QueryTimerTask(), 0L);
+            _timer = null;
+        }
+    }
+
+    public void stopLookup() {
+        if (_timer != null) {
+            _timer.cancel();
+            _timer = null;
+        }
+    }
+
+    protected void notifyReply(ServiceDescription descriptor) {
+        for (ServiceBrowserListener l : _listeners) {
+            l.serviceEncountered(descriptor);
+        }
+    }
+
+    public void startListener() {
+        if (_thread == null) {
+            _shouldRun = true;
+            _thread = new Thread(this, "ServiceBrowser");
+            _thread.start();
+        }
+    }
+
+    public void stopListener() {
+        if (_thread != null) {
+            _shouldRun = false;
+            _thread.interrupt();
+            _thread = null;
+        }
     }
 
     private class QueryTimerTask extends TimerTask {
@@ -261,7 +260,7 @@ public class ServiceBrowser implements Runnable {
         public void run() {
             DatagramPacket packet = getQueryPacket();
             if (packet != null) {
-                queuedPacket = packet;
+                _queuedPacket = packet;
             }
         }
     }
