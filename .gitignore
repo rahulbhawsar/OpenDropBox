@@ -1,2 +1,4 @@
 # Ignore all .class files
-*.class
+.class
+.DS_store
+java/OpenDropBox/nbproject/private/
